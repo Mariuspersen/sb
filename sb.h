@@ -36,8 +36,6 @@
 #define SBDEF
 #endif // SBDEF
 
-#define SV_NULL sv_from_parts(NULL, 0)
-
 // printf macros for StringBuild
 #define SB_Fmt "%.*s"
 #define SB_Arg(sb) (int) (sb)->length, (sb)->data
