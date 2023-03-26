@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdarg.h>
 
 #ifndef SBDEF
 #define SBDEF
@@ -52,6 +53,7 @@ String_Builder *sb_create(size_t initial_capacity);
 String_Builder *sb_create_from_file(const char* filename);
 bool sb_save_to_file(const char* filename, String_Builder* sb);
 void sb_append(String_Builder *sb, const char *str);
+void sb_append_format(String_Builder* sb, const char* format, ...);
 void sb_append_line(String_Builder *sb, const char *str);
 bool sb_delete(String_Builder *sb, size_t start_idx, size_t end_idx);
 bool sb_delete_line(String_Builder *sb, size_t line_number);
@@ -135,17 +137,39 @@ SBDEF bool sb_save_to_file(const char* filename, String_Builder* sb) {
     return true;
 }
 
-SBDEF void sb_append(String_Builder *sb, const char *str) {
-    size_t str_length = strlen(str);
+SBDEF void sb_check_capacity(String_Builder* sb, size_t str_length) {
     if (sb->length + str_length + 1 > sb->capacity) {
         while (sb->length + str_length + 1 > sb->capacity) {
             sb->capacity *= 2;
         }
         sb->data = realloc(sb->data, sb->capacity);
     }
+}
 
+SBDEF void sb_append(String_Builder *sb, const char *str) {
+    size_t str_length = strlen(str);
+    sb_check_capacity(sb,str_length);
     sb->length += str_length;
     strcat(sb->data, str);
+}
+
+SBDEF void sb_append_format(String_Builder* sb, const char* format, ...) {
+    va_list args1;
+    va_list args2;
+
+    va_start(args1,format);
+    va_copy(args2,args1);
+
+    size_t str_length = vsnprintf(NULL,0,format,args2);
+    va_end(args2);
+
+    char* temp = malloc(str_length);
+    
+    vsnprintf(temp, str_length + 1, format, args1);
+    va_end(args1);
+
+    sb_append(sb,temp);
+    free(temp);
 }
 
 SBDEF void sb_append_line(String_Builder *sb, const char *str) {
