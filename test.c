@@ -15,6 +15,9 @@ int main(void) {
     sb_append_line(sb,"Hello World!");
     sb_append_line(sb,"This is on a new line");
     sb_append_line(sb,"This is another line");
+    sb_append_format(sb,"Does [%s] work?","this");
+
+    sb_insert(sb,10,"inserting stuff works too");
 
     //deletes characters between index 0 and 5
     sb_delete(sb,0,5);
