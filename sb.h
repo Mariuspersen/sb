@@ -83,7 +83,7 @@ SBDEF String_Builder *sb_create(size_t initial_capacity) {
 }
 
 SBDEF String_Builder *sb_create_from_file(const char* filename) {
-    FILE* f = fopen(filename, "r");
+    FILE* f = fopen(filename, "rb");
 
     if (f == NULL) {
         printf("Error opening file\n");
@@ -186,6 +186,23 @@ SBDEF void sb_append_line(String_Builder *sb, const char *str) {
 
     sb_append(sb,str);
     sb_append(sb,"\n");
+}
+
+SBDEF bool sb_insert(String_Builder *sb, size_t start_idx, const char* str) {
+    if (start_idx > sb->length) {
+        return false;
+    }
+
+    size_t num_chars_to_add = strlen(str);
+    sb_check_capacity(sb,num_chars_to_add);
+    sb->data = realloc(sb->data, sb->capacity);
+    sb->length += num_chars_to_add;
+
+    memmove(sb->data + start_idx + num_chars_to_add, sb->data + start_idx, num_chars_to_add);
+    memmove(sb->data + start_idx,str,strlen(str));
+    sb->data[sb->length] = '\0';
+    
+    return true;
 }
 
 SBDEF bool sb_delete(String_Builder *sb, size_t start_idx, size_t end_idx) {

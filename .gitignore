@@ -1,3 +1,8 @@
 test
 .vscode
 a.out
+test.exe
+test.ilk
+test.obj
+test.pdb
+vc140.pdb
