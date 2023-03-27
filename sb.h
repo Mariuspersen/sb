@@ -163,7 +163,7 @@ SBDEF void sb_append_format(String_Builder* sb, const char* format, ...) {
     size_t str_length = vsnprintf(NULL,0,format,args2);
     va_end(args2);
 
-    char* temp = malloc(str_length);
+    char* temp = malloc(str_length + 1);
     
     vsnprintf(temp, str_length + 1, format, args1);
     va_end(args1);
