@@ -25,16 +25,16 @@ int main(void) {
     sb_insert(sb,0,"AAA");
 
     //You can delete characters between two indexes
-    //sb_delete(sb,0,1);
+    sb_delete(sb,0,1);
     
     //Or delete an entire line
     sb_delete_line(sb,3);
 
     //Can you guess what this does?
-    //sb_save_to_file(sb,filename);
+    sb_save_to_file(sb,filename);
 
     //If you are deleting alot and really care about memory usage you can use this to trim off the fat
-    //sb_trim(sb);
+    sb_trim(sb);
 
     //Print the stringbuilder
     printf(SB_Fmt,SB_Arg(sb));

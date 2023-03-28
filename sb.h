@@ -282,7 +282,7 @@ SBDEF bool sb_delete(String_Builder *sb, size_t start_idx, size_t end_idx) {
     }
 
     size_t num_chars_to_remove = end_idx - start_idx;
-    memmove(sb->data + start_idx, sb->data + end_idx + 1, sb->length - end_idx - 1);
+    memmove(sb->data + start_idx, sb->data + end_idx, sb->length - end_idx);
     sb->length -= num_chars_to_remove;
     sb->data[sb->length] = '\0';
     sb_trim(sb);
@@ -308,7 +308,7 @@ SBDEF bool sb_delete_line(String_Builder* sb, size_t line_number) {
         end_idx--;
     }
 
-    return sb_delete(sb, start_idx, end_idx);
+    return sb_delete(sb, start_idx-1, end_idx);
 }
 
 SBDEF void sb_destroy(String_Builder *sb) {
