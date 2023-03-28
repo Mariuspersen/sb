@@ -133,7 +133,6 @@ SBDEF String_Builder *sb_create(size_t initial_capacity) {
     sb->capacity = initial_capacity;
     sb->data[0] = '\0';
     sb->length = strlen(sb->data);
-    printf("\nCapacity: %lu\tLength: %lu\n",sb->capacity,sb->length);
     return sb;
 }
 
@@ -159,7 +158,7 @@ SBDEF String_Builder *sb_create_from_file(const char* filename) {
         return NULL;
     }
 
-    String_Builder* sb = sb_create(filesize+1);
+    String_Builder* sb = sb_create(filesize);
 
     if (sb == NULL) {
         printf("Error creating string builder\n");
@@ -168,9 +167,9 @@ SBDEF String_Builder *sb_create_from_file(const char* filename) {
         return NULL;
     }
 
-    sb->length = filesize+1;
 
     size_t sizeread = fread(sb->data, 1, filesize, f);
+    sb->length = filesize;
 
     if(sizeread != filesize) {
         printf("Error filesize does not equal sizeread\n");
@@ -252,7 +251,7 @@ SBDEF bool sb_insert(String_Builder *sb, size_t start_idx, const char* str) {
     sb_expand_capacity(sb,num_chars_to_add);
     sb->length += num_chars_to_add;
 
-    memmove(sb->data + start_idx + num_chars_to_add, sb->data + start_idx, sb->length - start_idx);
+    memmove(sb->data + start_idx + num_chars_to_add, sb->data + start_idx, sb->length - num_chars_to_add - start_idx);
     memmove(sb->data + start_idx, str, num_chars_to_add);
     sb->data[sb->length] = '\0';
     
@@ -272,7 +271,7 @@ SBDEF bool sb_insert_line(String_Builder *sb, size_t line_number, const char* st
     }
 
     sb_insert(sb,start_idx,str);
-    sb_insert(sb,start_idx + strlen(str),"\n");
+    //sb_insert(sb,start_idx + strlen(str),"\n");
 
     return true;
 }
@@ -283,10 +282,10 @@ SBDEF bool sb_delete(String_Builder *sb, size_t start_idx, size_t end_idx) {
     }
 
     size_t num_chars_to_remove = end_idx - start_idx;
-    memmove(sb->data + start_idx, sb->data + end_idx + 1, sb->length - end_idx);
+    memmove(sb->data + start_idx, sb->data + end_idx + 1, sb->length - end_idx - 1);
     sb->length -= num_chars_to_remove;
     sb->data[sb->length] = '\0';
-    //sb_trim(sb);
+    sb_trim(sb);
 
     return true;
 }
