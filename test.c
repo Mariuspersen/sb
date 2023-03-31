@@ -12,29 +12,30 @@ int main(void) {
     String_Builder* sb = access(filename, F_OK) == 0 ? sb_create_from_file(filename) : sb_create(0);
 
     //Appends a couple of lines
-    sb_append_line(sb,"Hello World!");
-    sb_append_line(sb,"This line gets deleted");
-    sb_append_line(sb,"This is on a new line");
-    sb_append_line(sb,"This is another line");
-    sb_append_format(sb,"Does %s work?\n","this");
+    sb_append_line(sb, "Line 1");
+    sb_append_line(sb, "Line 2");
+    sb_append_line(sb, "Line 3");
+    sb_append_line(sb, "Line 4");
+    sb_append_line(sb, "Line 5");
+    sb_append_line(sb, "Line 6");
 
-    //You can also insert a line between existing lines
-    sb_insert_line(sb,2,"This is a inserted line\n");
+    //Insert text
+    sb_insert(sb,0,"AAAAAA");
 
-    //Or you can insert with whatever index you want
-    sb_insert(sb,0,"AAA");
-
-    //You can delete characters between two indexes
-    sb_delete(sb,0,1);
+    //Insert a line
+    sb_insert_line(sb,0,"Line Insert 1");
+    sb_insert_line(sb,2,"Line Insert 2");
     
-    //Or delete an entire line
-    sb_delete_line(sb,3);
+    //deletes characters between index 0 and 5
+    sb_delete(sb,0,5);
+
+    //Delete some lines
+    sb_delete_line(sb,0);
+    sb_delete_line(sb,0);
+    sb_delete_line(sb,0);
 
     //Can you guess what this does?
     sb_save_to_file(sb,filename);
-
-    //If you are deleting alot and really care about memory usage you can use this to trim off the fat
-    sb_trim(sb);
 
     //Print the stringbuilder
     printf(SB_Fmt,SB_Arg(sb));

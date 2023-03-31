@@ -100,10 +100,11 @@ SBDEF bool sb_trim(String_Builder *sb) {
 
 SBDEF bool sb_get_line_index(String_Builder* sb, size_t line_number, size_t* index) {
     if (line_number == 0) {
-        return false;
+        *index = 0;
+        return true;
     }
 
-    size_t current_line = 1;
+    size_t current_line = 0;
     size_t i = 0;
     
     for (i = 0; i < sb->length; i++) {
@@ -259,11 +260,6 @@ SBDEF bool sb_insert(String_Builder *sb, size_t start_idx, const char* str) {
 }
 
 SBDEF bool sb_insert_line(String_Builder *sb, size_t line_number, const char* str) {
-    if (line_number == 0) {
-        return false;
-    }
-
-    size_t current_line = 1;
     size_t start_idx = 0;
 
     if(sb_get_line_index(sb,line_number,&start_idx)==false) {
@@ -271,7 +267,7 @@ SBDEF bool sb_insert_line(String_Builder *sb, size_t line_number, const char* st
     }
 
     sb_insert(sb,start_idx,str);
-    //sb_insert(sb,start_idx + strlen(str),"\n");
+    sb_insert(sb,start_idx + strlen(str),"\n");
 
     return true;
 }
@@ -291,24 +287,16 @@ SBDEF bool sb_delete(String_Builder *sb, size_t start_idx, size_t end_idx) {
 }
 
 SBDEF bool sb_delete_line(String_Builder* sb, size_t line_number) {
-    if (line_number == 0) {
-        return false;
-    }
-
     size_t start_idx = 0;
+    size_t end_idx = 0;
 
     if(sb_get_line_index(sb,line_number,&start_idx)==false) return false;
 
-    size_t end_idx = start_idx;
-    while (end_idx < sb->length && sb->data[end_idx] != '\n') {
-        end_idx++;
-    }
+    for (end_idx = start_idx;end_idx < sb->length && sb->data[end_idx] != '\n';  end_idx++);
 
-    if (end_idx > start_idx && sb->data[end_idx - 1] == '\r') {
-        end_idx--;
-    }
-
-    return sb_delete(sb, start_idx-1, end_idx);
+    if (end_idx > start_idx && sb->data[end_idx - 1] == '\r') end_idx--;
+    
+    return sb_delete(sb, start_idx, sb->data[end_idx] != '\0' ? end_idx + 1 : end_idx);
 }
 
 SBDEF void sb_destroy(String_Builder *sb) {
