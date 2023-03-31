@@ -10,24 +10,33 @@ int main(void) {
     const char* filename = "test";
 
     //If file test exists, read that, otherwise create a new string builder
-    //String_Builder* sb = _access(filename, 0) == 0 ? sb_create_from_file(filename) : sb_create(0);
+    String_Builder* sb = _access(filename, 0) == 0 ? sb_create_from_file(filename) : sb_create(0);
 
-    String_Builder* sb = sb_create(0);
-    sb_append(sb,"TestingTesting");
-    sb_insert(sb,7,"inserted");
     //Appends a couple of lines
-    //sb_append_line(sb,"Hello World!");
-    //sb_append_line(sb,"This is on a new line");
-    //sb_append_line(sb,"This is another line");
-    //sb_append_format(sb,"Testing format: [%s]\tSeems to work!",filename);
+    sb_append_line(sb, "Line 1");
+    sb_append_line(sb, "Line 2");
+    sb_append_line(sb, "Line 3");
+    sb_append_line(sb, "Line 4");
+    sb_append_line(sb, "Line 5");
+    sb_append_line(sb, "Line 6");
 
+    //Insert text
+    sb_insert(sb,0,"AAAAAA");
+
+    //Insert a line
+    sb_insert_line(sb,0,"Line Insert 1");
+    sb_insert_line(sb,2,"Line Insert 2");
+    
     //deletes characters between index 0 and 5
-    //sb_delete(sb,0,5);
-    //deletes line 2
-    //sb_delete_line(sb,2);
+    sb_delete(sb,0,5);
+
+    //Delete some lines
+    sb_delete_line(sb,0);
+    sb_delete_line(sb,0);
+    sb_delete_line(sb,0);
 
     //Can you guess what this does?
-    //sb_save_to_file(filename,sb);
+    sb_save_to_file(sb,filename);
 
     //Print the stringbuilder
     printf(SB_Fmt,SB_Arg(sb));
