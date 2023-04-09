@@ -60,7 +60,9 @@ void sb_append(String_Builder *sb, const char *str);
 void sb_append_format(String_Builder* sb, const char* format, ...);
 void sb_append_line(String_Builder *sb, const char *str);
 bool sb_insert(String_Builder *sb, size_t start_idx, const char* str);
+bool sb_insert_format(String_Builder* sb, size_t start_idx, const char* format, ...);
 bool sb_insert_line(String_Builder *sb, size_t line_number, const char* str);
+bool sb_insert_line_format(String_Builder* sb, size_t line_number, const char* format, ...);
 bool sb_delete(String_Builder *sb, size_t start_idx, size_t end_idx);
 bool sb_delete_line(String_Builder* sb, size_t line_number);
 void sb_destroy(String_Builder *sb);
@@ -208,21 +210,26 @@ SBDEF void sb_append(String_Builder *sb, const char *str) {
     strcat(sb->data, str);
 }
 
+#define FORMAT_STRING(format, result) \
+    do { \
+        va_list args1; \
+        va_list args2; \
+        \
+        va_start(args1, (format)); \
+        va_copy(args2, args1); \
+        \
+        size_t str_length = vsnprintf(NULL, 0, (format), args2); \
+        va_end(args2); \
+        \
+        (result) = malloc((str_length + 1)); \
+        \
+        vsnprintf((result), str_length + 1, (format), args1); \
+        va_end(args1); \
+    } while (0)
+
 SBDEF void sb_append_format(String_Builder* sb, const char* format, ...) {
-    va_list args1;
-    va_list args2;
-
-    va_start(args1,format);
-    va_copy(args2,args1);
-
-    size_t str_length = vsnprintf(NULL,0,format,args2);
-    va_end(args2);
-
-    char* temp = malloc((str_length + 1));
-    
-    vsnprintf(temp, str_length + 1, format, args1);
-    va_end(args1);
-
+    char* temp = NULL;
+    FORMAT_STRING(format,temp);
     sb_append(sb,temp);
     free(temp);
 }
@@ -259,6 +266,14 @@ SBDEF bool sb_insert(String_Builder *sb, size_t start_idx, const char* str) {
     return true;
 }
 
+SBDEF bool sb_insert_format(String_Builder* sb, size_t start_idx, const char* format, ...) {
+    char* temp = NULL;
+    FORMAT_STRING(format,temp);
+    bool return_val = sb_insert(sb,start_idx,temp);
+    free(temp);
+    return return_val;
+}
+
 SBDEF bool sb_insert_line(String_Builder *sb, size_t line_number, const char* str) {
     size_t start_idx = 0;
 
@@ -270,6 +285,14 @@ SBDEF bool sb_insert_line(String_Builder *sb, size_t line_number, const char* st
     sb_insert(sb,start_idx + strlen(str),"\n");
 
     return true;
+}
+
+SBDEF bool sb_insert_line_format(String_Builder* sb, size_t line_number, const char* format, ...) {
+    char* temp = NULL;
+    FORMAT_STRING(format,temp);
+    bool return_val = sb_insert_line(sb,line_number,temp);
+    free(temp);
+    return return_val;
 }
 
 SBDEF bool sb_delete(String_Builder *sb, size_t start_idx, size_t end_idx) {
@@ -291,11 +314,8 @@ SBDEF bool sb_delete_line(String_Builder* sb, size_t line_number) {
     size_t end_idx = 0;
 
     if(sb_get_line_index(sb,line_number,&start_idx)==false) return false;
-
     for (end_idx = start_idx;end_idx < sb->length && sb->data[end_idx] != '\n';  end_idx++);
-
     if (end_idx > start_idx && sb->data[end_idx - 1] == '\r') end_idx--;
-    
     return sb_delete(sb, start_idx, sb->data[end_idx] != '\0' ? end_idx + 1 : end_idx);
 }
 
