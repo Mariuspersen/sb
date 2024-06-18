@@ -47,6 +47,7 @@ typedef struct {
     size_t capacity;
 } String_Builder;
 
+
 const char* sb_get_string(const String_Builder* sb);
 size_t sb_get_length(const String_Builder* sb);
 size_t sb_get_capacity(const String_Builder* sb);
@@ -54,11 +55,12 @@ bool sb_trim(String_Builder *sb);
 bool sb_get_line_index(String_Builder* sb, size_t line_number, size_t* index);
 String_Builder *sb_create(size_t initial_capacity);
 String_Builder *sb_create_from_file(const char* filename);
+String_Builder *sb_create_from_filepointer(FILE* f);
 bool sb_save_to_file(String_Builder* sb, const char* filename);
-void sb_expand_capacity(String_Builder* sb, size_t str_length);
-void sb_append(String_Builder *sb, const char *str);
-void sb_append_format(String_Builder* sb, const char* format, ...);
-void sb_append_line(String_Builder *sb, const char *str);
+bool sb_expand_capacity(String_Builder* sb, size_t str_length);
+bool sb_append(String_Builder *sb, const char *str);
+bool sb_append_format(String_Builder* sb, const char* format, ...);
+bool sb_append_line(String_Builder *sb, const char *str);
 bool sb_insert(String_Builder *sb, size_t start_idx, const char* str);
 bool sb_insert_format(String_Builder* sb, size_t start_idx, const char* format, ...);
 bool sb_insert_line(String_Builder *sb, size_t line_number, const char* str);
@@ -139,24 +141,23 @@ SBDEF String_Builder *sb_create(size_t initial_capacity) {
     return sb;
 }
 
-SBDEF String_Builder *sb_create_from_file(const char* filename) {
-    FILE* f = fopen(filename, "r");
+SBDEF String_Builder *sb_create_from_filepointer(FILE* f) {
 
     if (f == NULL) {
-        printf("Error opening file\n");
+        perror("Error opening file\n");
         return NULL;
     }
 
     if(fseek(f, 0, SEEK_END) != 0) {
-        printf("Error seeking end of file\n");
+        perror("Error seeking end of file\n");
         fclose(f);
         return NULL;
-    }
-
+    } 
+    
     size_t filesize = ftell(f);
 
     if(fseek(f, 0, SEEK_SET)!= 0) {
-        printf("Error seeking beginning of file\n");
+        perror("Error seeking beginning of file\n");
         fclose(f);
         return NULL;
     }
@@ -164,7 +165,7 @@ SBDEF String_Builder *sb_create_from_file(const char* filename) {
     String_Builder* sb = sb_create(filesize);
 
     if (sb == NULL) {
-        printf("Error creating string builder\n");
+        perror("Error creating string builder\n");
         fclose(f);
         sb_destroy(sb);
         return NULL;
@@ -175,13 +176,20 @@ SBDEF String_Builder *sb_create_from_file(const char* filename) {
     sb->length = filesize;
 
     if(sizeread != filesize) {
-        printf("Error filesize does not equal sizeread\n");
+        perror("Error filesize does not equal sizeread\n");
         fclose(f);
         sb_destroy(sb);
         return NULL;
     }
 
     sb->data[filesize] = '\0';
+    fclose(f);
+    return sb;
+}
+
+SBDEF String_Builder *sb_create_from_file(const char* filename) {
+    FILE* f = fopen(filename, "r");
+    String_Builder* sb = sb_create_from_filepointer(f);
     fclose(f);
     return sb;
 }
@@ -194,20 +202,32 @@ SBDEF bool sb_save_to_file(String_Builder* sb, const char* filename) {
     return true;
 }
 
-SBDEF void sb_expand_capacity(String_Builder* sb, size_t str_length) {
+SBDEF bool sb_expand_capacity(String_Builder* sb, size_t str_length) {
     if (sb->length + str_length + 1 > sb->capacity) {
         while (sb->length + str_length + 1 > sb->capacity) {
             sb->capacity *= 2;
         }
         sb->data = realloc(sb->data, sb->capacity);
     }
+    if (sb->data)
+    {
+        return true;
+    }
+    else {
+        perror("Unable to realloc data");
+        return false;
+    }
+    
 }
 
-SBDEF void sb_append(String_Builder *sb, const char *str) {
+SBDEF bool sb_append(String_Builder *sb, const char *str) {
     size_t str_length = strlen(str);
-    sb_expand_capacity(sb,str_length);
+    if(!sb_expand_capacity(sb,str_length)) {
+        return false;
+    }
     sb->length += str_length;
     strcat(sb->data, str);
+    return true;
 }
 
 #define FORMAT_STRING(format, result) \
@@ -227,27 +247,32 @@ SBDEF void sb_append(String_Builder *sb, const char *str) {
         va_end(args1); \
     } while (0)
 
-SBDEF void sb_append_format(String_Builder* sb, const char* format, ...) {
+SBDEF bool sb_append_format(String_Builder* sb, const char* format, ...) {
     char* temp = NULL;
     FORMAT_STRING(format,temp);
-    sb_append(sb,temp);
+    if(!sb_append(sb,temp)) {
+        return false;
+    }
     free(temp);
+    return true;
 }
 
-SBDEF void sb_append_line(String_Builder *sb, const char *str) {
+SBDEF bool sb_append_line(String_Builder *sb, const char *str) {
 
     if (sb->length < 1) {
-        sb_append(sb,str);
-        sb_append(sb,"\n");
-        return;
+        if(!sb_append(sb,str)) return false;
+        if(!sb_append(sb,"\n")) return false;
+        return true;
     }
 
     if (sb->data[sb->length - 1] != '\n') {
-        sb_append(sb, "\n");
+        if(!sb_append(sb, "\n")) return false;
     }
 
-    sb_append(sb,str);
-    sb_append(sb,"\n");
+    if(sb_append(sb,str)) return false;
+    if(sb_append(sb,"\n")) return false;
+
+    return true;
 }
 
 SBDEF bool sb_insert(String_Builder *sb, size_t start_idx, const char* str) {
@@ -256,7 +281,7 @@ SBDEF bool sb_insert(String_Builder *sb, size_t start_idx, const char* str) {
     }
 
     size_t num_chars_to_add = strlen(str);
-    sb_expand_capacity(sb,num_chars_to_add);
+    if(!sb_expand_capacity(sb,num_chars_to_add)) return false;
     sb->length += num_chars_to_add;
 
     memmove(sb->data + start_idx + num_chars_to_add, sb->data + start_idx, sb->length - num_chars_to_add - start_idx);
@@ -277,12 +302,9 @@ SBDEF bool sb_insert_format(String_Builder* sb, size_t start_idx, const char* fo
 SBDEF bool sb_insert_line(String_Builder *sb, size_t line_number, const char* str) {
     size_t start_idx = 0;
 
-    if(sb_get_line_index(sb,line_number,&start_idx)==false) {
-        return false;
-    }
-
-    sb_insert(sb,start_idx,str);
-    sb_insert(sb,start_idx + strlen(str),"\n");
+    if(!sb_get_line_index(sb,line_number,&start_idx)) return false;
+    if(!sb_insert(sb,start_idx,str)) return false;
+    if(!sb_insert(sb,start_idx + strlen(str),"\n")) return false;;
 
     return true;
 }
@@ -304,9 +326,7 @@ SBDEF bool sb_delete(String_Builder *sb, size_t start_idx, size_t end_idx) {
     memmove(sb->data + start_idx, sb->data + end_idx, sb->length - end_idx);
     sb->length -= num_chars_to_remove;
     sb->data[sb->length] = '\0';
-    sb_trim(sb);
-
-    return true;
+    return sb_trim(sb);
 }
 
 SBDEF bool sb_delete_line(String_Builder* sb, size_t line_number) {
@@ -320,7 +340,7 @@ SBDEF bool sb_delete_line(String_Builder* sb, size_t line_number) {
 }
 
 SBDEF void sb_destroy(String_Builder *sb) {
-    free(sb->data);
-    free(sb);
+    if(sb && sb->data) free(sb->data);
+    if(sb) free(sb);
 }
 #endif //SB_IMPLEMENTATION
